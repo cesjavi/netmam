@@ -1,0 +1,60 @@
+{
+  "name": "netmam",
+  "version": "1.0.0",
+  "private": true,
+  "main": "electron/main.js",
+  "author": "NetMAM",
+  "description": "Arcade web emulator shell for user-provided MAME-compatible ROMs.",
+  "scripts": {
+    "dev": "serve public",
+    "start": "serve public",
+    "icons": "node scripts/make-ico.js",
+    "build": "npm run icons && node scripts/check-static.js",
+    "desktop": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis portable",
+    "dist:linux": "electron-builder --linux dir tar.gz",
+    "dist:linux-native": "electron-builder --linux AppImage deb",
+    "netplay:setup": "node scripts/netplay-server.js setup",
+    "netplay:start": "node scripts/netplay-server.js start",
+    "netplay-online:dev": "cargo run --manifest-path netplay-online/Cargo.toml",
+    "netplay-online:build": "cargo build --release --manifest-path netplay-online/Cargo.toml"
+  },
+  "build": {
+    "appId": "com.netmam.arcade",
+    "productName": "NetMAM",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "public/icons/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "dir",
+        "tar.gz"
+      ],
+      "category": "Game",
+      "icon": "public/icons"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^41.7.1",
+    "electron-builder": "^26.8.1",
+    "serve": "^14.2.5"
+  }
+}

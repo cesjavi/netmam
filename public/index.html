@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NetMAM Arcade</title>
+    <meta
+      name="description"
+      content="Emulador arcade online compatible con ROMs MAME 2003 cargadas por el usuario."
+    >
+    <meta name="theme-color" content="#111314">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="arcade-stage" aria-labelledby="app-title">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Arcade online</p>
+            <h1 id="app-title">NetMAM</h1>
+          </div>
+          <div class="status" id="status" role="status">Esperando ROM</div>
+        </div>
+
+        <div class="cabinet">
+          <div class="screen-wrap" id="dropZone">
+            <div class="screen" id="screen">
+              <div class="empty-state" id="emptyState">
+                <strong>Solta un ZIP de MAME 2003 o elegilo desde tu equipo</strong>
+                <span>No se suben archivos: la ROM se ejecuta localmente en tu navegador.</span>
+              </div>
+            </div>
+          </div>
+
+          <aside class="control-panel" aria-label="Controles del emulador">
+            <label class="field">
+              <span>Core</span>
+              <select id="coreSelect">
+                <option value="mame2003_plus">MAME 2003-Plus</option>
+                <option value="mame2003">MAME 2003</option>
+                <option value="fbneo">FinalBurn Neo</option>
+              </select>
+            </label>
+
+            <label class="file-button" for="romInput">
+              <input id="romInput" type="file" accept=".zip,.7z,.bin,.rom">
+              <span>Cargar ROM</span>
+            </label>
+
+            <button id="restartButton" type="button" disabled>Reiniciar</button>
+            <button id="fullscreenButton" type="button" disabled>Pantalla completa</button>
+            <button id="playButton" type="button" disabled>Jugar</button>
+            <button id="toggleConsoleButton" type="button">Mostrar consola</button>
+
+            <section class="netplay-panel" aria-label="Netplay">
+              <label class="toggle-row">
+                <input id="netplayEnabled" type="checkbox">
+                <span>Netplay</span>
+              </label>
+
+              <label class="field">
+                <span>Servidor</span>
+                <input
+                  id="netplayServer"
+                  type="url"
+                  inputmode="url"
+                  placeholder="https://tu-servidor:3000"
+                >
+              </label>
+
+              <label class="field">
+                <span>Sala</span>
+                <input id="roomId" type="text" maxlength="48" autocomplete="off">
+              </label>
+
+              <div class="room-actions">
+                <button id="newRoomButton" type="button">Nueva sala</button>
+                <button id="copyInviteButton" type="button">Copiar link</button>
+              </div>
+            </section>
+
+            <div class="keys" aria-label="Mapa de teclas">
+              <div><kbd>Enter</kbd><span>Start</span></div>
+              <div><kbd>5</kbd><span>Moneda</span></div>
+              <div><kbd>Flechas</kbd><span>Movimiento</span></div>
+              <div><kbd>Z X A S Q W</kbd><span>Botones</span></div>
+            </div>
+          </aside>
+        </div>
+
+        <section class="debug-console" id="debugConsole" aria-label="Consola de errores" hidden>
+          <div class="console-toolbar">
+            <strong>Consola</strong>
+            <div>
+              <button id="copyConsoleButton" type="button">Copiar</button>
+              <button id="clearConsoleButton" type="button">Limpiar</button>
+            </div>
+          </div>
+          <pre id="consoleOutput" aria-live="polite"></pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

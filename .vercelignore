@@ -1,0 +1,8 @@
+node_modules/
+.git/
+electron/
+dist/
+netplay-server/
+netplay-online/
+*.png
+!public/icons/*.png
