@@ -17,6 +17,21 @@ const dropZone = document.querySelector("#dropZone");
 const screen = document.querySelector("#screen");
 const statusBadge = document.querySelector("#status");
 
+// Referencias del catálogo de ROMs
+const catalogSearch = document.querySelector("#catalogSearch");
+const catalogList = document.querySelector("#catalogList");
+const downloadProgressOverlay = document.querySelector("#downloadProgressOverlay");
+const downloadGameTitle = document.querySelector("#downloadGameTitle");
+const downloadProgressBar = document.querySelector("#downloadProgressBar");
+const downloadStatusText = document.querySelector("#downloadStatusText");
+const cancelDownloadButton = document.querySelector("#cancelDownloadButton");
+const corsWarningOverlay = document.querySelector("#corsWarningOverlay");
+const corsDownloadLink = document.querySelector("#corsDownloadLink");
+const closeCorsButton = document.querySelector("#closeCorsButton");
+
+let currentAbortController = null;
+let romsList = [];
+
 let currentRom = null;
 let emulatorAssetsPromise = null;
 const debugLines = [];
@@ -436,6 +451,227 @@ if ("serviceWorker" in navigator && ["http:", "https:"].includes(window.location
   });
 }
 
+/* --- FUNCIONES Y EVENTOS DEL CATÁLOGO DE ROMS --- */
+
+async function fetchCatalog() {
+  try {
+    addDebugLine("info", "Cargando catálogo de juegos...");
+    const response = await fetch("/roms.json");
+    if (!response.ok) {
+      throw new Error(`Error HTTP: ${response.status}`);
+    }
+    romsList = await response.json();
+    addDebugLine("info", `Catálogo cargado con ${romsList.length} juegos`);
+    renderCatalog(romsList);
+  } catch (error) {
+    addDebugLine("warn", "No se pudo cargar el catálogo online. Usando lista estática de respaldo.", error);
+    // Lista de respaldo para que la app nunca se vea rota si falla el fetch del JSON
+    romsList = [
+      {
+        "id": "robby",
+        "name": "Robby Roto",
+        "core": "mame2003",
+        "rom": "robby.zip",
+        "url": "https://archive.org/download/mame-0.78-roms-non-merged/robby.zip",
+        "description": "Clásico arcade de 1981, liberado oficialmente por los autores para uso no comercial.",
+        "category": "Libre"
+      },
+      {
+        "id": "pacman",
+        "name": "Pac-Man (Midway)",
+        "core": "mame2003",
+        "rom": "pacman.zip",
+        "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/pacman.zip",
+        "description": "El devorador de fantasmas más icónico de la historia de los videojuegos (1980).",
+        "category": "Clásico"
+      },
+      {
+        "id": "sf2",
+        "name": "Street Fighter II: The World Warrior",
+        "core": "mame2003",
+        "rom": "sf2.zip",
+        "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/sf2.zip",
+        "description": "El legendario juego que definió el género de peleas uno contra uno en 1991.",
+        "category": "Lucha"
+      }
+    ];
+    renderCatalog(romsList);
+  }
+}
+
+function renderCatalog(games) {
+  catalogList.replaceChildren();
+
+  if (games.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "catalog-empty";
+    empty.textContent = "No se encontraron juegos";
+    catalogList.append(empty);
+    return;
+  }
+
+  games.forEach((game) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "catalog-item";
+    item.dataset.id = game.id;
+    
+    // Asignar active si coincide con la ROM actual
+    if (currentRom && currentRom.name === game.rom) {
+      item.classList.add("active");
+    }
+
+    const categoryClass = game.category.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-");
+
+    item.innerHTML = `
+      <div class="catalog-item-header">
+        <span class="catalog-item-title">${game.name}</span>
+        <div class="catalog-item-badges">
+          <span class="catalog-item-badge core-${game.core === 'fbneo' ? 'fbneo' : 'mame'}">${game.core === 'fbneo' ? 'FBNeo' : 'MAME 2003'}</span>
+          <span class="catalog-item-badge cat-${categoryClass}">${game.category}</span>
+        </div>
+      </div>
+      <div class="catalog-item-desc">${game.description}</div>
+      <div class="catalog-item-actions">
+        <span class="catalog-item-romname">${game.rom}</span>
+        <span class="catalog-btn-play">Jugar</span>
+      </div>
+    `;
+
+    item.addEventListener("click", () => {
+      // Remover active de otros items
+      catalogList.querySelectorAll(".catalog-item").forEach(el => el.classList.remove("active"));
+      item.classList.add("active");
+      
+      playFromCatalog(game);
+    });
+
+    catalogList.append(item);
+  });
+}
+
+async function playFromCatalog(game) {
+  // Cancelar descarga activa si existe
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
+
+  // Ocultar cualquier error CORS activo
+  corsWarningOverlay.hidden = true;
+
+  // Actualizar el selector de Core al core requerido por este juego
+  coreSelect.value = game.core;
+
+  // Inicializar controlador para poder cancelar la descarga
+  currentAbortController = new AbortController();
+
+  // Mostrar el overlay de progreso de descarga
+  downloadGameTitle.textContent = game.name;
+  downloadProgressBar.style.width = "0%";
+  downloadStatusText.textContent = "Iniciando descarga...";
+  downloadProgressOverlay.hidden = false;
+  setStatus(`Descargando ${game.name}...`, "ready");
+
+  try {
+    addDebugLine("info", "Descargando ROM...", game.name, `desde ${game.url}`);
+    
+    const response = await fetch(game.url, {
+      signal: currentAbortController.signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error de servidor: ${response.status} ${response.statusText}`);
+    }
+
+    const contentLength = response.headers.get("content-length");
+    if (!contentLength) {
+      addDebugLine("warn", "No se detectó cabecera Content-Length, el progreso será impreciso.");
+    }
+
+    const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+    let receivedBytes = 0;
+
+    const reader = response.body.getReader();
+    const chunks = [];
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) break;
+
+      chunks.push(value);
+      receivedBytes += value.length;
+
+      if (totalBytes > 0) {
+        const percent = Math.round((receivedBytes / totalBytes) * 100);
+        downloadProgressBar.style.width = `${percent}%`;
+        downloadStatusText.textContent = `${percent}% descargado (${(receivedBytes / 1024 / 1024).toFixed(1)} MB / ${(totalBytes / 1024 / 1024).toFixed(1)} MB)`;
+      } else {
+        downloadStatusText.textContent = `Descargando... (${(receivedBytes / 1024 / 1024).toFixed(1)} MB descargados)`;
+      }
+    }
+
+    // Unir todos los fragmentos descargados
+    const romBlob = new Blob(chunks, { type: "application/zip" });
+    const file = new File([romBlob], game.rom, { type: "application/zip" });
+
+    // Ocultar overlay de descarga
+    downloadProgressOverlay.hidden = true;
+    currentAbortController = null;
+
+    // Cargar la ROM en el emulador
+    await loadRom(file);
+
+  } catch (error) {
+    if (error.name === "AbortError") {
+      addDebugLine("warn", "Descarga cancelada por el usuario");
+      setStatus("Descarga cancelada", "");
+      downloadProgressOverlay.hidden = true;
+      return;
+    }
+
+    addDebugLine("error", "Error al descargar la ROM", error);
+    downloadProgressOverlay.hidden = true;
+
+    // Mostrar el overlay alternativo para CORS o fallo de red
+    corsDownloadLink.href = game.url;
+    corsDownloadLink.setAttribute("download", game.rom);
+    corsWarningOverlay.hidden = false;
+    setStatus("Error de conexión directa (CORS)", "error");
+  }
+}
+
+// Escuchar cambios en la barra de búsqueda
+catalogSearch.addEventListener("input", (event) => {
+  const query = event.target.value.toLowerCase().trim();
+  const filtered = romsList.filter((game) => {
+    return game.name.toLowerCase().includes(query) || 
+           game.rom.toLowerCase().includes(query) ||
+           game.description.toLowerCase().includes(query) ||
+           game.category.toLowerCase().includes(query);
+  });
+  renderCatalog(filtered);
+});
+
+// Cancelar descarga activa
+cancelDownloadButton.addEventListener("click", () => {
+  if (currentAbortController) {
+    currentAbortController.abort();
+    currentAbortController = null;
+  }
+  downloadProgressOverlay.hidden = true;
+});
+
+// Cerrar el diálogo de CORS
+closeCorsButton.addEventListener("click", () => {
+  corsWarningOverlay.hidden = true;
+});
+
 loadNetplaySettings();
 installConsoleCapture();
+fetchCatalog();
 addDebugLine("info", "NetMAM listo");

@@ -26,8 +26,43 @@
         </div>
 
         <div class="cabinet">
+          <aside class="catalog-panel" aria-label="Catálogo de Juegos">
+            <div class="catalog-header">
+              <h2>Biblioteca</h2>
+              <input id="catalogSearch" type="search" placeholder="Buscar juego..." autocomplete="off">
+            </div>
+            <div class="catalog-list" id="catalogList">
+              <div class="catalog-loading">Cargando biblioteca...</div>
+            </div>
+          </aside>
+
           <div class="screen-wrap" id="dropZone">
             <div class="screen" id="screen">
+              <!-- Overlay de descarga de ROM -->
+              <div id="downloadProgressOverlay" class="download-overlay" hidden>
+                <div class="download-spinner"></div>
+                <strong id="downloadGameTitle">Descargando juego...</strong>
+                <div class="progress-bar-container">
+                  <div id="downloadProgressBar" class="progress-bar"></div>
+                </div>
+                <span id="downloadStatusText">0% completado</span>
+                <button id="cancelDownloadButton" class="cancel-button" type="button">Cancelar</button>
+              </div>
+
+              <!-- Overlay para error CORS / Red -->
+              <div id="corsWarningOverlay" class="cors-overlay" hidden>
+                <strong class="cors-title">⚠️ Descarga alternativa requerida</strong>
+                <p>Las restricciones de red (CORS) impiden la descarga directa.</p>
+                <div class="cors-steps">
+                  <div class="step"><span>1</span><p>Descarga el archivo ZIP con el botón de abajo.</p></div>
+                  <div class="step"><span>2</span><p>Arrastra y suelta el archivo ZIP aquí para jugar.</p></div>
+                </div>
+                <div class="cors-actions">
+                  <a id="corsDownloadLink" href="#" class="cors-download-btn" download>Descargar ZIP</a>
+                  <button id="closeCorsButton" class="cors-close-btn" type="button">Cerrar</button>
+                </div>
+              </div>
+
               <div class="empty-state" id="emptyState">
                 <strong>Solta un ZIP de MAME 2003 o elegilo desde tu equipo</strong>
                 <span>No se suben archivos: la ROM se ejecuta localmente en tu navegador.</span>

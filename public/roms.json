@@ -1,0 +1,65 @@
+[
+  {
+    "id": "robby",
+    "name": "Robby Roto",
+    "core": "mame2003",
+    "rom": "robby.zip",
+    "url": "https://archive.org/download/mame-0.78-roms-non-merged/robby.zip",
+    "description": "Clásico arcade de 1981, liberado oficialmente por los autores para uso no comercial.",
+    "category": "Libre"
+  },
+  {
+    "id": "pacman",
+    "name": "Pac-Man (Midway)",
+    "core": "mame2003",
+    "rom": "pacman.zip",
+    "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/pacman.zip",
+    "description": "El devorador de fantasmas más icónico de la historia de los videojuegos (1980).",
+    "category": "Clásico"
+  },
+  {
+    "id": "sf2",
+    "name": "Street Fighter II: The World Warrior",
+    "core": "mame2003",
+    "rom": "sf2.zip",
+    "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/sf2.zip",
+    "description": "El legendario juego que definió el género de peleas uno contra uno en 1991.",
+    "category": "Lucha"
+  },
+  {
+    "id": "mslug",
+    "name": "Metal Slug - Super Vehicle-001",
+    "core": "fbneo",
+    "rom": "mslug.zip",
+    "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/mslug.zip",
+    "description": "Acción frenética, animaciones increíbles y explosiones masivas en este 'run and gun' (1996).",
+    "category": "Acción"
+  },
+  {
+    "id": "dino",
+    "name": "Cadillacs and Dinosaurs",
+    "core": "fbneo",
+    "rom": "dino.zip",
+    "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/dino.zip",
+    "description": "El beat 'em up cooperativo definitivo ambientado en un futuro postapocalíptico de Capcom (1993).",
+    "category": "Beat 'em up"
+  },
+  {
+    "id": "smario",
+    "name": "Super Mario Bros. (PlayChoice-10)",
+    "core": "mame2003",
+    "rom": "smario.zip",
+    "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/smario.zip",
+    "description": "La versión original del clásico de plataformas de Nintendo adaptada para cabinas arcade (1986).",
+    "category": "Plataformas"
+  },
+  {
+    "id": "bublbobl",
+    "name": "Bubble Bobble",
+    "core": "mame2003",
+    "rom": "bublbobl.zip",
+    "url": "https://archive.org/download/MAME2003_Reference_Set_for_RetroPie/roms/bublbobl.zip",
+    "description": "Atrapa monstruos en burbujas y salta plataformas a través de 100 divertidos niveles (1986).",
+    "category": "Clásico"
+  }
+]
