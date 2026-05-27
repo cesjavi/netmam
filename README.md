@@ -86,6 +86,13 @@ npm run dist:linux-native
 
 Los archivos finales quedan en `dist/`.
 
+### ¿Está integrado Netplay en los ejecutables?
+
+El **cliente** de Netplay está 100% integrado en la app de escritorio, pero el **servidor** de Netplay no lo está:
+
+* **Cliente integrado:** La versión de escritorio para Windows/Linux cuenta con toda la interfaz de Netplay habilitada (crear salas, unirse a salas, copiar links, chat y sincronización de controles). Es 100% compatible y permite jugar de forma cruzada con jugadores que usen la versión web.
+* **Servidor externo requerido:** El ejecutable no levanta un servidor de Netplay en segundo plano de manera automática. Para poder usar el multijugador, ambos jugadores deben configurar la dirección de un servidor externo (ya sea uno público alojado en la nube como Railway/Render, o uno local iniciado manualmente mediante la terminal con `npm run netplay:start`).
+
 ## Netplay
 
 La interfaz tiene modo Netplay con servidor y sala compartible. Todos los jugadores deben usar el mismo core y cargar la misma ROM localmente.
