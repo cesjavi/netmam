@@ -226,6 +226,32 @@ function buildInviteUrl() {
   return url.toString();
 }
 
+async function copyToClipboard(text) {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  // Fallback para contextos no seguros (HTTP / IPs locales)
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed"; // Evita scroll no deseado
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  try {
+    const successful = document.execCommand("copy");
+    if (!successful) {
+      throw new Error("execCommand copy falló");
+    }
+  } catch (err) {
+    throw new Error("No se pudo copiar el texto");
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 function buildEmulatorConfig(gameData, gameName, core, netplay) {
   const config = {
     gameUrl: gameData,
@@ -243,10 +269,23 @@ function buildEmulatorConfig(gameData, gameName, core, netplay) {
 
   if (netplay.enabled) {
     config.netplayUrl = netplay.server;
+    config.netplayServer = netplay.server;
     config.gameId = netplay.room;
+    config.gameID = netplay.room;
+    
+    // Variables de ventana globales para máxima compatibilidad con EmulatorJS
+    window.EJS_netplayServer = netplay.server;
+    window.EJS_netplayUrl = netplay.server;
+    window.EJS_gameID = netplay.room;
     window.EJS_netplayICEServers = iceServers;
     window.EJS_DEBUG_XX = true;
     window.EJS_EXPERIMENTAL_NETPLAY = true;
+  } else {
+    // Limpieza de globales si Netplay está inactivo
+    delete window.EJS_netplayServer;
+    delete window.EJS_netplayUrl;
+    delete window.EJS_gameID;
+    delete window.EJS_netplayICEServers;
   }
 
   return config;
@@ -310,6 +349,13 @@ async function loadRom(file) {
     const gameData = await file.arrayBuffer();
     addDebugLine("info", "ROM leida en memoria", `${gameData.byteLength} bytes`);
     await loadEmulatorAssets();
+
+    // Esperar al siguiente cuadro de animación para que el navegador complete
+    // el layout y tamaño real del contenedor #game en el DOM
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    void game.offsetHeight; // Forzar reflow de dimensiones
+    void game.offsetWidth;
+
     window.EJS_DEBUG_XX = true;
     window.EJS_emulator = new window.EmulatorJS("#game", buildEmulatorConfig(gameData, file.name, coreSelect.value, netplay));
     addDebugLine("info", "EmulatorJS inicializado", file.name, coreSelect.value);
@@ -383,7 +429,7 @@ copyInviteButton.addEventListener("click", async () => {
   saveNetplaySettings();
 
   try {
-    await navigator.clipboard.writeText(buildInviteUrl());
+    await copyToClipboard(buildInviteUrl());
     setStatus("Link copiado", "ready");
   } catch {
     setStatus("No se pudo copiar", "error");
@@ -406,7 +452,7 @@ clearConsoleButton.addEventListener("click", () => {
 
 copyConsoleButton.addEventListener("click", async () => {
   try {
-    await navigator.clipboard.writeText(consoleOutput.textContent);
+    await copyToClipboard(consoleOutput.textContent);
     setStatus("Consola copiada", "ready");
   } catch (error) {
     addDebugLine("error", error);

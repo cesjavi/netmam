@@ -145,117 +145,190 @@ Servidor: http://localhost:3000
 
 Si el servidor netplay muestra otro puerto, usar ese puerto.
 
-### Jugar de una PC a otra en la misma red
+### 🏠 Guía paso a paso: Jugar en Red Local (LAN)
 
-En la PC que corre el servidor netplay, buscar la IP local:
+Esta opción es perfecta para jugar con alguien en tu misma casa, usando la misma red Wi-Fi o router. Una computadora actuará como **Anfitriona (Host)** para levantar el juego y el servidor de Netplay, y la otra computadora se conectará como **Invitada (Cliente)**.
 
-```powershell
-ipconfig
-```
+---
 
-Usar la direccion IPv4 de tu placa de red, por ejemplo:
+#### 💻 PASO A PASO EN LA PC ANFITRIONA (HOST)
 
-```text
-192.168.1.50
-```
+1. **Iniciar el servidor de Netplay local:**
+   Abre una terminal en tu proyecto y ejecuta el servidor local que coordinará los controles:
+   ```powershell
+   npm run netplay:setup
+   npm run netplay:start
+   ```
+   *Nota: Por defecto, este servidor escuchará en el puerto **`3000`**.*
 
-En la otra PC, abrir la app web y configurar:
+2. **Iniciar el Frontend (Servidor Web):**
+   Abre otra terminal y ejecuta el servidor web para que la otra PC pueda cargar la aplicación:
+   ```powershell
+   npx serve public --listen 8080
+   ```
+   *Nota: Esto levantará la aplicación web de NetMAM en el puerto **`8080`**.*
 
-```text
-Servidor: http://192.168.1.50:3000
-```
+3. **Averiguar tu IP Local en la red de tu casa:**
+   Abre una terminal (PowerShell o CMD) y escribe:
+   ```powershell
+   ipconfig
+   ```
+   Busca la tarjeta de red activa (Wi-Fi o Ethernet) y copia la dirección **IPv4 Address**.
+   > [!TIP]
+   > En tu caso particular, tu IP local actual en tu placa de red es **`192.168.1.4`**.
 
-Ambas PCs deben activar `Netplay`, usar la misma sala, el mismo core y la misma ROM. Si Windows Firewall pregunta, permitir Node.js en redes privadas.
+4. **Entrar al juego y configurar Netplay:**
+   - Abre tu navegador web en **`http://localhost:8080`** (o en la app de Electron).
+   - Activa la casilla de **Netplay**.
+   - En el campo **Servidor**, asegúrate de ingresar la URL local del servidor de Netplay:
+     ```text
+     http://localhost:3000
+     ```
+   - Escribe un nombre único para tu **Sala** (por ejemplo: `sala-casa`) o genera uno aleatorio.
+   - Elige el **Core** deseado (por ejemplo, *MAME 2003-Plus*) y carga tu **ROM (.zip)**.
+   - Espera a que el juego inicie. Ahora estarás en la pantalla del juego esperando a que se conecte el segundo jugador.
 
-### Jugar de una PC a otra por internet
+---
 
-Para jugar por internet necesitás dos cosas separadas:
+#### 👥 PASO A PASO EN LA PC INVITADA (CLIENTE)
 
-1. `NetMAM`: la app web o desktop donde cada jugador carga su ROM.
-2. `Servidor Netplay`: un servidor Node.js accesible por internet.
+1. **Acceder a la aplicación web de la PC Anfitriona:**
+   Desde la PC invitada, abre el navegador web e ingresa a la IP local de la PC Anfitriona en el puerto 8080:
+   ```text
+   http://192.168.1.4:8080
+   ```
+   *(Reemplaza `192.168.1.4` por la IP IPv4 de la PC Anfitriona si esta llegara a cambiar).*
 
-Vercel sirve para publicar NetMAM, pero no es buena opcion para el servidor Netplay porque necesita conexiones persistentes/WebSocket.
+2. **Configurar Netplay para apuntar a la PC Anfitriona:**
+   - Activa la casilla de **Netplay**.
+   - En el campo **Servidor**, debes poner la IP de la PC Anfitriona en el puerto `3000`:
+     ```text
+     http://192.168.1.4:3000
+     ```
+   - En el campo **Sala**, escribe **exactamente el mismo nombre de sala** que ingresó la PC Anfitriona (por ejemplo: `sala-casa`).
 
-El servidor netplay debe ser accesible desde afuera. Hay dos formas:
+3. **Iniciar el juego:**
+   - Elige el **mismo Core** que seleccionó el anfitrión (*MAME 2003-Plus*).
+   - Carga la **misma ROM (.zip)** del juego.
+   - ¡Listo! En unos segundos el emulador sincronizará ambos controles y podrán jugar juntos.
 
-1. Publicarlo en un hosting con WebSockets/Docker, como Railway, Render, Fly.io, VPS o Docker en un servidor propio.
-2. Abrir/redirigir el puerto del router hacia la PC que corre el servidor netplay.
+> [!WARNING]
+> **¿No conecta? Revisa el Firewall de Windows:**
+> La primera vez que corres Node.js o el servidor en la PC Anfitriona, Windows te mostrará una ventana preguntando si deseas dar permisos de red.
+> - Asegúrate de permitir el acceso en **Redes Privadas** (tu red de hogar).
+> - Si sigues experimentando bloqueos, puedes permitir temporalmente el puerto `3000` y `8080` de entrada en la Configuración Avanzada del Firewall de Windows o desactivarlo momentáneamente para probar.
 
-### Opcion recomendada: hosting con WebSockets/Docker
+---
 
-Subir o clonar el servidor oficial:
+### 🌐 Guía paso a paso: Jugar por Internet (Online)
 
-```bash
-git clone https://github.com/EmulatorJS/EmulatorJS-Netplay.git
-cd EmulatorJS-Netplay
-npm install
-npm start
-```
+Para jugar por internet con amigos que no están en tu misma casa, necesitas que el servidor de Netplay (puerto `3000`) sea accesible externamente a través de internet. 
 
-Deployarlo en un host con WebSockets o Docker:
+A continuación, tienes las **4 mejores alternativas** para lograrlo, ordenadas de la más sencilla a la más avanzada:
 
-- Railway
-- Render
-- Fly.io
-- VPS propio
-- Docker en un servidor propio
+---
 
-Cuando el hosting entregue una URL, por ejemplo:
+#### ☁️ MÉTODO A: Deployar el Servidor en la Nube (Opción Recomendada 24/7)
 
-```text
-https://netplay-tuapp.up.railway.app
-```
+La mejor opción para no depender de que tu computadora actúe como servidor público es subir el backend de Netplay a un hosting gratuito o de bajo costo (como Render, Railway o Fly.io).
 
-ponerla en NetMAM:
+1. **Preparar y subir el servidor:**
+   El subdirectorio `netplay-online/` en este repositorio ya contiene un servidor en Rust rápido y optimizado para Docker y servicios en la nube.
+   - Consulta el manual detallado en `[netplay-online/README.md](file:///d:/sistemas/netmam/netplay-online/README.md)`.
+2. **Deployar en Render o Railway:**
+   - Sube este repositorio a tu cuenta de GitHub.
+   - Crea un nuevo servicio Web Service / App en [Render](https://render.com) o [Railway](https://railway.app).
+   - Configura el **Root Directory** como `netplay-online` y selecciona la opción de Docker (o Cargo/Rust).
+   - Una vez finalizado el despliegue, el hosting te dará una URL HTTPS pública permanente, por ejemplo:
+     ```text
+     https://netmam-netplay.onrender.com
+     ```
+3. **Jugar online:**
+   - Ambos jugadores entran a NetMAM (puede ser la versión web subida a Vercel, ejecutables de escritorio, o local en `http://localhost:8080`).
+   - Ambos configuran el campo **Servidor** con tu nueva URL pública:
+     ```text
+     https://netmam-netplay.onrender.com
+     ```
+   - El Anfitrión activa Netplay, crea una sala, copia el link y se lo envía al Cliente.
+   - Ambos cargan la misma ROM y a disfrutar sin configuraciones de red complejas.
 
-```text
-Servidor: https://netplay-tuapp.up.railway.app
-```
+---
 
-Despues:
+#### ⚡ MÉTODO B: Usar ngrok (Rápido, gratuito y sin configurar el router)
 
-1. Activar `Netplay`.
-2. Tocar `Nueva sala`.
-3. Tocar `Copiar link`.
-4. Pasar ese link al otro jugador.
-5. Ambos cargan la misma ROM ZIP y usan el mismo core.
+[ngrok](https://ngrok.com/) es una herramienta gratuita excelente que crea un túnel seguro desde internet directo a un puerto de tu PC local. Te permite jugar online en 2 minutos sin abrir puertos del router.
 
-### Opcion casera: abrir puerto del router
+1. **Instalar ngrok:**
+   - Descarga ngrok gratis desde su sitio web oficial y regístrate para obtener tu token de autenticación gratuito.
+   - Autentica tu cliente ngrok en tu PC ejecutando:
+     ```powershell
+     ngrok config add-authtoken TU_TOKEN_DE_NGROK
+     ```
+2. **Iniciar tu servidor local:**
+   - En la PC que será el host, arranca el servidor local de netplay de manera normal:
+     ```powershell
+     npm run netplay:start
+     ```
+3. **Exponer el puerto al mundo:**
+   - Abre otra terminal y ejecuta el siguiente comando para tunelizar el puerto del servidor:
+     ```powershell
+     ngrok http 3000
+     ```
+   - ngrok te mostrará una pantalla con una URL pública que finaliza en `.ngrok-free.app` (ejemplo: `https://abcd-123-456.ngrok-free.app`).
+4. **Jugar:**
+   - Ambos jugadores configuran en NetMAM el campo **Servidor** con esa dirección pública HTTPS generada por ngrok:
+     ```text
+     https://abcd-123-456.ngrok-free.app
+     ```
+   - Usen la misma sala, mismo core y misma ROM. ¡El túnel de ngrok redirigirá toda la comunicación automáticamente!
 
-En la PC que va a hacer de servidor:
+---
 
-```powershell
-cd D:\sistemas\netmam
-npm run netplay:setup
-npm run netplay:start
-```
+#### 🔒 MÉTODO C: Redes Virtuales Privadas (Tailscale o ZeroTier)
 
-Buscar la IP local:
+Si quieres jugar únicamente con amigos de confianza y con la máxima seguridad y mínima latencia, puedes crear una red LAN virtual privada encriptada.
 
-```powershell
-ipconfig
-```
+1. **Instalar Tailscale:**
+   - Ambos jugadores descargan e instalan [Tailscale](https://tailscale.com/) de forma totalmente gratuita en sus computadoras.
+   - Ambos inician sesión con la misma cuenta o comparten un enlace de invitación para unirse a la misma red virtual privada (Tailnet).
+2. **Obtener la IP Virtual de Tailscale:**
+   - Al conectarse, Tailscale les asignará una IP virtual privada del estilo `100.x.y.z`.
+   - La PC 1 (Anfitriona) inicia el servidor local de Netplay en su puerto `3000`.
+3. **Configurar en NetMAM:**
+   - El jugador 1 (Host) configura su servidor en NetMAM como `http://localhost:3000`.
+   - El jugador 2 (Cliente) configura el servidor usando la IP virtual de Tailscale de la PC Anfitriona:
+     ```text
+     http://100.x.y.z:3000
+     ```
+   - Activan Netplay, colocan la misma sala, cargan la misma ROM y juegan como si estuvieran en la misma habitación.
 
-Ejemplo:
+---
 
-```text
-192.168.1.50
-```
+#### 🛠️ MÉTODO D: Redirección de Puertos (Port Forwarding - El clásico)
 
-En el router:
+Si prefieres la vieja escuela y tienes acceso de administrador al panel de control de tu router de internet:
 
-1. Fijar la IP local de la PC servidor, por ejemplo `192.168.1.50`.
-2. Redirigir el puerto del servidor netplay, normalmente `3000`, hacia `192.168.1.50:3000`.
-3. Permitir Node.js en el firewall.
-4. Compartir tu IP publica o dominio DDNS.
+1. **Fijar IP e iniciar servidor:**
+   - Fija la IP local de tu PC en tu red local (por ejemplo, configurando tu placa a `192.168.1.4` o haciéndolo mediante DHCP estático en el router).
+   - Inicia el servidor de netplay local: `npm run netplay:start`.
+2. **Redirigir puertos en el router:**
+   - Entra a la puerta de enlace de tu router (normalmente ingresando a `http://192.168.1.1` en el navegador).
+   - Busca la sección de **Port Forwarding / Virtual Server / Redirección de Puertos**.
+   - Añade una nueva regla redirigiendo el puerto **`3000`** (protocolo TCP/UDP) hacia la IP local de tu PC (`192.168.1.4`).
+3. **Buscar tu IP Pública:**
+   - Escribe en Google *"¿Cuál es mi IP pública?"* o entra a sitios como `cualesmiip.com`. Supongamos que tu IP pública es `200.123.45.67`.
+4. **Conectarse:**
+   - Tu amigo (el cliente) pondrá en su configuración de NetMAM:
+     ```text
+     Servidor: http://200.123.45.67:3000
+     ```
+   - Recuerda permitir el puerto en el firewall de Windows.
 
-Ejemplo:
-
-```text
-Servidor: http://TU-IP-PUBLICA:3000
-```
-
-Esta opcion es menos recomendable. Para internet real, HTTPS/WSS es preferible porque algunos navegadores bloquean funciones modernas desde origenes inseguros. Ver detalles en `netplay/README.md`.
+> [!IMPORTANT]
+> **Detalle crucial sobre HTTPS y Seguridad:**
+> Algunos navegadores modernos bloquean conexiones WebSocket inseguras (`ws://` o `http://`) cuando la app web principal está corriendo bajo HTTPS seguro (como cuando está subida a `https://netmam.vercel.app`).
+> - Si juegas en la versión web HTTPS, **debes usar un servidor Netplay HTTPS** (Método A con Render/Railway, o el túnel HTTPS de ngrok del Método B).
+> - Si usas conexiones HTTP simples (`http://192.168.1.4:3000` o `http://IP-PUBLICA:3000`), te recomendamos jugar abriendo la aplicación desde la **versión de escritorio (Electron)** o sirviendo la aplicación web localmente de forma insegura en `http://localhost:8080`.
 
 ### Reglas para que funcione online
 
